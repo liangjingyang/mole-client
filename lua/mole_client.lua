@@ -126,14 +126,15 @@ function mole:start()
 
     self.socket = udp
 
-    timer:start(handler(self, self.serverConn), 3) 
+    timer:start(handler(self, self.serverReq), 3) 
     timer:start(handler(self, self.bcastConn), 1)
     while true do
         self:recv()
     end
 end
 
-function mole:serverConn(data, timerId)
+function mole:serverReq(data, timerId)
+    print("send server request")
     if self.his_net or self.conn_type then
         timer:kill(timerId)
         return
@@ -142,6 +143,7 @@ function mole:serverConn(data, timerId)
 end
 
 function mole:bcastConn(data, timerId)
+    print("send bcast conn")
     if self.conn_type then
         timer:kill(timerId)
         return
