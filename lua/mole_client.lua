@@ -90,7 +90,7 @@ local function key_to_128(key)
 end
 
 local function handler(self, func)
-    return function() func(self) end
+    return function(...) func(self, ...) end
 end
 
 function mole:new(my_key, his_key, port, s_ip, s_port)
@@ -133,21 +133,23 @@ function mole:start()
     end
 end
 
-function mole:serverReq(data, timerId)
-    print("send server request")
+function mole:serverReq(data, timerId, xxx)
     if self.his_net or self.conn_type then
+        print("send server request, kill", timerId, data, xxx)
         timer:kill(timerId)
         return
     end
+    print("send server request")
     self.socket:sendto(self.my_packet, self.s_ip, self.s_port)
 end
 
 function mole:bcastConn(data, timerId)
-    print("send bcast conn")
     if self.conn_type then
+        print("send bcast conn, kill", timerId)
         timer:kill(timerId)
         return
     end
+    print("send bcast conn")
     datagram = BCAST_CONN .. self.my_key .. self.his_key
     self.socket:sendto(datagram, "255.255.255.255", self.my_port)
 end

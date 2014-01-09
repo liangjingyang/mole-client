@@ -9,6 +9,8 @@ atimer.isRunning = nil
 
 function atimer:start(callback, interval, runCount, data)
     local item = {interval = interval, lastTick = 0}
+    item.id = atimer.count
+    atimer.count = atimer.count + 1
     item.onTick = function()
         item.lastTick = item.lastTick + 1
         if item.lastTick == item.interval then
@@ -22,8 +24,6 @@ function atimer:start(callback, interval, runCount, data)
             end
         end
     end
-    atimer.count = atimer.count + 1
-    item.id = atimer.count
     atimer.list[tostring(item.id)] = item
 end
 
