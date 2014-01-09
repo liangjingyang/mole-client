@@ -82,9 +82,8 @@ handle_info({udp, _Socket, Ip, Port, <<?WAN_CONN>>}, State) ->
 
 %% server response
 handle_info({udp, _Socket, _Ip, _Port, 
-        <<?SERVER_RES, HisKey:128/bitstring, IpBin:32/bitstring, PortBin:40/bitstring, Packet/binary>>}, State) ->
-    <<I1:8, I2:8, I3:8, I4:8>> = IpBin,
-    WanIp = {I1, I2, I3, I4},
+        <<?SERVER_RES, HisKey:128/bitstring, IpBin:120/bitstring, PortBin:40/bitstring, Packet/binary>>}, State) ->
+    WanIp = bin2ip(IpBin),
     WanPort = bin2port(PortBin),
     LanArgs = binary_to_term(Packet),
     io:format("begin to make hole with ~w~n", [HisKey]),
@@ -240,3 +239,9 @@ start_conn() ->
             
 bin2port(PortBin) ->
     list_to_integer(binary_to_list(PortBin)).
+
+bin2ip(IpBin) ->
+    IpStr = binary_to_list(IpBin),
+    IpStr2 = string:tokens(IpStr, "."),
+    IpStr3 = lists:map(fun(X) ->list_to_integer(X) end, IpStr2),
+    list_to_tuple(IpStr3).

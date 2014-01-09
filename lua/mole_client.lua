@@ -226,13 +226,13 @@ end
 function mole:recvServerRes(datagram, ip, port)
     print("recv server response", ip, port)
     self.his_key = string.sub(datagram, 2, 17)
-    local ipstr = string.sub(datagram, 18, 21)
-    local portstr = string.sub(datagram, 22, 26)
-    local lanstr = string.sub(datagram, 27, string.len(datagram))
+    local ipstr = string.sub(datagram, 18, 32)
+    local portstr = string.sub(datagram, 33, 37)
+    local lanstr = string.sub(datagram, 38, string.len(datagram))
 
     local wanip = ""
-    for i = 1, 4 do
-        wanip = wanip .. string.byte(ipstr, i) .. "."
+    for i = 0, 3 do
+        wanip = wanip .. tonumber(string.sub(ipstr, i*4 + 1, i*4 + 3)) .. "."
     end
     wanip = string.sub(wanip, 1, string.len(wanip) - 1)
     local wanport = tonumber(portstr) 
