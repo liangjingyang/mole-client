@@ -101,7 +101,7 @@ function mole:new(my_key, his_key, port, s_ip, s_port)
     his_key = key_to_128(his_key)
     local lan_str = lan_to_str({ips = my_lan.ip, port = my_lan.port})
     my_packet = SERVER_REQ .. my_key .. his_key .. lan_str 
-    print("mole new: sip:" .. s_ip .. "sport:" .. s_port .. "lan:" .. lan_str)
+    print("mole new: sip:" .. s_ip .. "sport:" .. s_port .. "lan:" .. lan_str, "port:" .. port)
     local o = {
         my_key = my_key,
         his_key = his_key,
