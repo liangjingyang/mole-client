@@ -70,7 +70,7 @@ end
 local function str_to_lan(str)
     local ips = {}
     for k in string.gmatch(str, "(%d+.%d+.%d+.%d+)") do
-        table.insert(ip, 1, k)
+        table.insert(ips, 1, k)
     end
     local port = string.match(str, "p(%d+)")
     return {ips = ips, port = port}
