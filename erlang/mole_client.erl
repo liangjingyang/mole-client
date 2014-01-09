@@ -10,12 +10,12 @@
 
 -record(state, {socket, s_ip, s_port, conn, conn_type, my_lan, my_port, my_packet, my_key, his_key, his_net}).
 
--define(SERVER_REQ, 1).
--define(SERVER_RES, 2).
--define(WAN_CONN, 3).
--define(LAN_CONN, 4).
--define(BCAST_CONN, 5).
--define(HEART_BEAT, 6).
+-define(SERVER_REQ, <<"1">>).
+-define(SERVER_RES, <<"2">>).
+-define(WAN_CONN, <<"3">>).
+-define(LAN_CONN, <<"4">>).
+-define(BCAST_CONN, <<"5">>).
+-define(HEART_BEAT, <<"6">>).
 
 start(MyKey, HisKey, Port, ServerIp, ServerPort) ->
     gen_server:start({local, ?MODULE}, ?MODULE, [MyKey, HisKey, Port, ServerIp, ServerPort], []).
@@ -41,7 +41,7 @@ handle_cast(_Request, State) ->
 
 
 %% lan
-handle_info({udp, _Socket, Ip, Port, <<?LAN_CONN:8/bitstring>>}, State) ->
+handle_info({udp, _Socket, Ip, Port, <<?LAN_CONN>>}, State) ->
     case State#state.his_net of
         undefined ->
             State2 = State;
@@ -63,7 +63,7 @@ handle_info({udp, _Socket, Ip, Port, <<?LAN_CONN:8/bitstring>>}, State) ->
     {noreply, State2};
 
 %% wan
-handle_info({udp, _Socket, Ip, Port, <<?WAN_CONN:8/bitstring>>}, State) ->
+handle_info({udp, _Socket, Ip, Port, <<?WAN_CONN>>}, State) ->
     case State#state.his_net of
         undefined ->
             State2 = State;
@@ -82,7 +82,7 @@ handle_info({udp, _Socket, Ip, Port, <<?WAN_CONN:8/bitstring>>}, State) ->
 
 %% server response
 handle_info({udp, _Socket, _Ip, _Port, 
-        <<?SERVER_RES:8/bitstring, HisKey:128/bitstring, Ip:32/bitstring, WanPort:16, Packet/binary>>}, State) ->
+        <<?SERVER_RES, HisKey:128/bitstring, Ip:32/bitstring, WanPort:16, Packet/binary>>}, State) ->
     <<I1:8, I2:8, I3:8, I4:8>> = Ip,
     WanIp = {I1, I2, I3, I4},
     LanArgs = binary_to_term(Packet),
@@ -93,12 +93,12 @@ handle_info({udp, _Socket, _Ip, _Port,
 
 
 %% p2p data
-handle_info({udp, _Socket, Ip, Port, <<?HEART_BEAT:8/bitstring, Packet/binary>>}, State) ->
+handle_info({udp, _Socket, Ip, Port, <<?HEART_BEAT, Packet/binary>>}, State) ->
     io:format("recv p2p data from ip:~p port:~p packet: ~p~n", [Ip, Port, Packet]),
     {noreply, State};
 
 %% recv bcast conn
-handle_info({udp, Socket, Ip, Port, <<?BCAST_CONN:8/bitstring, HisKey:128/bitstring, MyKey:128/bitstring>>}, State) ->
+handle_info({udp, Socket, Ip, Port, <<?BCAST_CONN, HisKey:128/bitstring, MyKey:128/bitstring>>}, State) ->
     case State#state.my_key =:= HisKey of
         true ->
             %io:format("recv bcast conn from myself~n", []),
