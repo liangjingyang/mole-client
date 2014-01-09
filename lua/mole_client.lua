@@ -15,18 +15,39 @@ local HEART_BEAT = '6'
 
 
 local function get_local_192()
-    local cmd = "ifconfig |grep \"inet addr:\" | awk -F:  '{print $2}'|awk '{print $1}'|grep '^192\\.168'"
-    return os.execute(cmd)
+    local cmd = "echo `ifconfig |grep \"inet addr:\" | awk -F:  '{print $2}'|awk '{print $1}'|grep '^192\\.168'` > localip"
+    os.execute(cmd)
+    local file = io.open("localip", "r")
+    local c = file:read()
+    file:close()
+    if string.len(c) > 6 then
+        return c 
+    end
+    return nil
 end
 
 local function get_local_172()
-    local cmd = "ifconfig |grep \"inet addr:\" | awk -F:  '{print $2}'|awk '{print $1}'|grep '^172\\.16'"
-    return os.execute(cmd)
+    local cmd = "echo `ifconfig |grep \"inet addr:\" | awk -F:  '{print $2}'|awk '{print $1}'|grep '^172\\.16'` > localip"
+    os.execute(cmd)
+    local file = io.open("localip", "r")
+    local c = file:read()
+    file:close()
+    if string.len(c) > 6 then
+        return c 
+    end
+    return nil
 end
 
 local function get_local_10()
-    local cmd = "ifconfig |grep \"inet addr:\" | awk -F:  '{print $2}'|awk '{print $1}'|grep '^10\\.'"
-    return os.execute(cmd)
+    local cmd = "echo `ifconfig |grep \"inet addr:\" | awk -F:  '{print $2}'|awk '{print $1}'|grep '^10\\.'` > localip"
+    os.execute(cmd)
+    local file = io.open("localip", "r")
+    local c = file:read()
+    file:close()
+    if string.len(c) > 6 then
+        return c 
+    end
+    return nil
 end
 
 local function get_lan_ip()
@@ -61,7 +82,7 @@ local function key_to_128(key)
     if size > 16 then
         key = string.sub(key, 1, 16)
     elseif size < 16 then
-        for 1, 16 - size do
+        for i = 1, (16 - size) do
             key = key .. "$"
         end
     end
@@ -132,22 +153,21 @@ end
 function mole:recv()
     local datagram, ip, port = self.socket:receivefrom()
     if datagram then
+        print("datagram:", datagram)
         self:router(datagram, ip, port)
-    else
-        print("recv err:", ip)
     end
 end
 
 function mole:router(datagram, ip, port)
     local proto = string.sub(datagram, 1, 1)
     if proto == SERVER_RES then
-        self:serverRes(datagram, ip, port)
+        self:recvServerRes(datagram, ip, port)
     elseif proto == BCAST_CONN then
-        self:bcastConn(datagram, ip, port)
+        self:recvBcastConn(datagram, ip, port)
     elseif proto == LAN_CONN then
-        self:lanConn(datagram, ip, port)
+        self:recvLanConn(datagram, ip, port)
     elseif proto == WAN_CONN then
-        self:wanConn(datagram, ip, port)
+        self:recvWanConn(datagram, ip, port)
     elseif proto == HEART_BEAT then
         print("heart beat")
     else
@@ -155,7 +175,7 @@ function mole:router(datagram, ip, port)
     end
 end
 
-function mole:wanConn(datagram, ip, port)
+function mole:recvWanConn(datagram, ip, port)
     if not self.conn_type then
         print("recv wan conn", ip, port)
         self.conn = {ip = ip, port = port}
@@ -165,7 +185,7 @@ function mole:wanConn(datagram, ip, port)
     end
 end
 
-function mole:lanConn(datagram, ip, port)
+function mole:recvLanConn(datagram, ip, port)
     if not self.conn_type then
         print("recv lan conn", ip, port)
         self.conn = {ip = ip, port = port}
@@ -178,8 +198,9 @@ function mole:lanConn(datagram, ip, port)
         self.conn_type = LAN_CONN
         self.socket:sendto(LAN_CONN, ip, port)
     end
+end
 
-function mole:bcastConn(datagram, ip, port)
+function mole:recvBcastConn(datagram, ip, port)
     local hisKey = string.sub(datagram, 2, 17)
     local myKey = string.sub(datagram, 18, 33)
     if myKey == self.my_key and hisKey == self.his_key then
@@ -200,7 +221,7 @@ function mole:bcastConn(datagram, ip, port)
     end
 end
 
-function mole:serverRes(datagram, ip, port)
+function mole:recvServerRes(datagram, ip, port)
     print("recv server response", ip, port)
     self.his_key = string.sub(datagram, 2, 17)
     local ipstr = string.sub(datagram, 18, 21)
@@ -216,11 +237,11 @@ function mole:serverRes(datagram, ip, port)
     local lantab = str_to_lan(lanstr)
 
     local p2pargs = {wanip = wanip, wanport = wanport, lantab = lantab}
-    self:p2pconn(p2pargs)
-    timer:start(handler(self, self.p2pconn), 3, nil, p2pargs) 
+    self:p2pConn(p2pargs)
+    timer:start(handler(self, self.p2pConn), 3, nil, p2pargs) 
 end
 
-function mole:p2pconn(args, timerId)
+function mole:p2pConn(args, timerId)
     if self.conn_type then
         timer:kill(timerId)
         return
@@ -241,5 +262,8 @@ function mole:heartBeat(data, timerId)
     end
 end
 
-
+mole.get_lan_ip = get_lan_ip
+mole.get_local_10 = get_local_10
+mole.get_local_172 = get_local_172
+mole.get_local_192 = get_local_192
 return mole

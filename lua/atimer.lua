@@ -32,7 +32,6 @@ function atimer:kill(id)
 end
 
 local function atimerCallBack()
-    print("alarm 1 ")
     for k, v in pairs(atimer.list) do
         v.onTick()
     end
@@ -45,10 +44,6 @@ if not atimer.isRunning then
     atimer.isRuning = true
 end
 
-atimer:start(function() print(os.time()) end, 2, 10)
-
-while true do
-    do end
-end
+--atimer:start(function() print(os.time()) end, 2, 10)
 
 return atimer
